@@ -95,9 +95,11 @@ func getSearchResults(htmlDoc io.Reader) ([]string, error) {
 
 					text := &bytes.Buffer{}
 					getText(n, text)
-					pkgName := pkgNameCleaner.Replace(strings.TrimPrefix(text.String(), "/"))
-					if pkgName != "" {
-						searchResults = append(searchResults, pkgName)
+
+					qualifiedName := text.String()
+					simpleName := pkgNameCleaner.Replace(qualifiedName)
+					if qualifiedName != "" && simpleName != "" {
+						searchResults = append(searchResults, fmt.Sprintf("%s %s", simpleName, qualifiedName))
 					}
 				}
 			}
