@@ -7,41 +7,81 @@ refs:
 */
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/exec"
 	"strings"
 
 	"github.com/go-resty/resty/v2"
-	"golang.org/x/exp/slices"
 	"golang.org/x/net/html"
 )
 
 func main() {
 
+	retv := os.Getenv("ROFI_RETV")
+
 	var searchQuery string
 
-	if len(os.Args) == 2 {
+	switch retv {
+	case "0":
+		searchQuery = "strings"
+	case "1":
+		open(os.Args[1])
+	case "2":
 		searchQuery = os.Args[1]
-	} else {
-		searchQuery = "golang"
-	}
-
-	if isPkgPath(searchQuery) {
-		openPkgPage(searchQuery)
 	}
 
 	URI := fmt.Sprintf("https://pkg.go.dev/search?q=%s&limit=100&m=package#more-results", searchQuery)
 
 	client := resty.New()
 
-	resp, err := client.R().SetDoNotParseResponse(true).EnableTrace().Get(URI)
-	defer resp.RawBody().Close()
-
-	doc, err := html.Parse(resp.RawBody())
+	resp, err := client.R().SetDoNotParseResponse(true).Get(URI)
 	if err != nil {
 		log.Fatal(err)
+	}
+	defer resp.RawBody().Close()
+
+	searchResults, err := getSearchResults(resp.RawBody())
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Print(strings.Join(searchResults, "\n"))
+}
+
+func open(pkgPath string) {
+	bin, err := exec.LookPath("xdg-open")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	args := []string{"https://pkg.go.dev/" + pkgPath}
+
+	cmd := exec.Command(bin, args...)
+	if err = cmd.Start(); err != nil {
+		log.Fatal(err)
+	}
+	os.Exit(0)
+}
+
+var pkgNameCleaner *strings.Replacer = strings.NewReplacer("(", "", ")", "")
+
+func getText(n *html.Node, buf *bytes.Buffer) {
+	if n.Type == html.TextNode {
+		buf.WriteString(n.Data)
+	}
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		getText(c, buf)
+	}
+}
+
+func getSearchResults(htmlDoc io.Reader) ([]string, error) {
+
+	htmlTree, err := html.Parse(htmlDoc)
+	if err != nil {
+		return nil, err
 	}
 
 	searchResults := make([]string, 0)
@@ -49,18 +89,15 @@ func main() {
 	var f func(*html.Node)
 	f = func(n *html.Node) {
 
-		if n.Type == html.ElementNode && n.Data == "a" {
+		if n.Type == html.ElementNode && n.Data == "span" {
 			for _, att := range n.Attr {
-				if att.Key == "href" {
-					url := att.Val
-					if isPkgPath(url) {
+				if att.Key == "class" && att.Val == "SearchSnippet-header-path" {
 
-						url := trimSubPath(url)
-
-						if !slices.Contains(searchResults, url) {
-							// TODO: order by imports
-							searchResults = append(searchResults, url)
-						}
+					text := &bytes.Buffer{}
+					getText(n, text)
+					pkgName := pkgNameCleaner.Replace(strings.TrimPrefix(text.String(), "/"))
+					if pkgName != "" {
+						searchResults = append(searchResults, pkgName)
 					}
 				}
 			}
@@ -70,37 +107,7 @@ func main() {
 			f(c)
 		}
 	}
-	f(doc)
+	f(htmlTree)
 
-	fmt.Print(strings.Join(searchResults, "\n"))
-}
-
-func isPkgPath(url string) bool {
-	// TODO: include other git hosting services
-	return strings.HasPrefix(url, "/github.com") && !strings.Contains(url, "?")
-}
-
-func openPkgPage(pkgPath string) {
-	xdgOpen, err := exec.LookPath("xdg-open")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	args := []string{"https://" + pkgPath}
-
-	cmd := exec.Command(xdgOpen, args...)
-	err = cmd.Start()
-	if err != nil {
-		log.Fatal(err)
-	} else {
-		os.Exit(0)
-	}
-}
-
-func trimSubPath(url string) string {
-	if strings.Count(url, "/") > 3 {
-		splitted := strings.Split(url, "/")
-		url = strings.Join(splitted[:4], "/")
-	}
-	return url
+	return searchResults, nil
 }
