@@ -13,11 +13,14 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 
 	"github.com/go-resty/resty/v2"
 	"golang.org/x/net/html"
 )
+
+var pkgRegex *regexp.Regexp = regexp.MustCompile(`\(.*\)`)
 
 func main() {
 
@@ -26,11 +29,17 @@ func main() {
 	var searchQuery string
 
 	switch retv {
-	case "0":
+	case "0": // first call
 		searchQuery = "strings"
-	case "1":
-		open(os.Args[1])
-	case "2":
+	case "1": // entry selected
+		{
+			pkgPath := strings.TrimSpace(os.Args[1])
+			if pkgRegex.MatchString(pkgPath) {
+				pkgPath = pkgNameCleaner.Replace(pkgRegex.FindStringSubmatch(pkgPath)[0])
+			}
+			open(pkgPath)
+		}
+	case "2": // input typed
 		searchQuery = os.Args[1]
 	}
 
@@ -98,6 +107,10 @@ func getSearchResults(htmlDoc io.Reader) ([]string, error) {
 
 					qualifiedName := text.String()
 					simpleName := pkgNameCleaner.Replace(qualifiedName)
+					if strings.Contains(simpleName, "/") {
+						splitted := strings.Split(simpleName, "/")
+						simpleName = splitted[len(splitted)-1]
+					}
 					if qualifiedName != "" && simpleName != "" {
 						searchResults = append(searchResults, fmt.Sprintf("%s %s", simpleName, qualifiedName))
 					}
