@@ -20,7 +20,7 @@ import (
 	"golang.org/x/net/html"
 )
 
-var pkgRegex *regexp.Regexp = regexp.MustCompile(`\(.*\)`)
+var pkgPathRegex *regexp.Regexp = regexp.MustCompile(`\(.*\)`)
 
 func main() {
 
@@ -29,17 +29,17 @@ func main() {
 	var searchQuery string
 
 	switch retv {
-	case "0": // first call
+	case "0": // first call to script
 		searchQuery = "strings"
-	case "1": // entry selected
+	case "1": // entry was selected
 		{
-			pkgPath := strings.TrimSpace(os.Args[1])
-			if pkgRegex.MatchString(pkgPath) {
-				pkgPath = pkgNameCleaner.Replace(pkgRegex.FindStringSubmatch(pkgPath)[0])
+			selectedEntry := strings.TrimSpace(os.Args[1])
+			if pkgPathRegex.MatchString(selectedEntry) {
+				selectedEntry = pkgNameCleaner.Replace(pkgPathRegex.FindStringSubmatch(selectedEntry)[0])
 			}
-			open(pkgPath)
+			open(selectedEntry)
 		}
-	case "2": // input typed
+	case "2": // input typed by user
 		searchQuery = os.Args[1]
 	}
 
@@ -61,18 +61,26 @@ func main() {
 }
 
 func open(pkgPath string) {
-	bin, err := exec.LookPath("xdg-open")
-	if err != nil {
-		log.Fatal(err)
-	}
 
-	args := []string{"https://pkg.go.dev/" + pkgPath}
+	pkgUrl := fmt.Sprintf("https://pkg.go.dev/%s", pkgPath)
 
-	cmd := exec.Command(bin, args...)
-	if err = cmd.Start(); err != nil {
-		log.Fatal(err)
+	if err := openWithDefaultBrowser(pkgUrl); err != nil {
+		os.Exit(1)
 	}
 	os.Exit(0)
+}
+
+func openWithDefaultBrowser(url string) error {
+	bin, err := exec.LookPath("xdg-open")
+	if err != nil {
+		return err
+	}
+
+	cmd := exec.Command(bin, url)
+	if err = cmd.Start(); err != nil {
+		return err
+	}
+	return nil
 }
 
 var pkgNameCleaner *strings.Replacer = strings.NewReplacer("(", "", ")", "")
@@ -112,7 +120,9 @@ func getSearchResults(htmlDoc io.Reader) ([]string, error) {
 						simpleName = splitted[len(splitted)-1]
 					}
 					if qualifiedName != "" && simpleName != "" {
-						searchResults = append(searchResults, fmt.Sprintf("%s %s", simpleName, qualifiedName))
+						searchResults = append(searchResults,
+							fmt.Sprintf("%s %s", simpleName, qualifiedName),
+						)
 					}
 				}
 			}
