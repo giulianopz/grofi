@@ -4,4 +4,4 @@ tasks:
   run:
     cmds:
       - go build .
-      - rofi -show grofi -modi "grofi:/home/giulianopz/git/grofi/grofi"
+      - rofi -show grofi -modi "grofi:$HOME/git/grofi/grofi"

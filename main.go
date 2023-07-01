@@ -1,11 +1,5 @@
 package main
 
-/*
-refs:
-- https://man.archlinux.org/man/rofi-script.5.en
-- https://github.com/davatorium/rofi-scripts
-*/
-
 import (
 	"bytes"
 	"fmt"
