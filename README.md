@@ -10,7 +10,7 @@ go build -o /usr/local/bin/grofi .
 chmod u+x /usr/local/bin/grofi
 ```
 
-Then add a custom keyboard shortcut to launch `rofi` in script mode:
+Then add a custom keyboard shortcut to launch `rofi` in script mode according to your desktop environment (e.g. see [here](https://docs.fedoraproject.org/en-US/quick-docs/proc_setting-key-shortcut/) for GNOME):
 ```
 rofi -show grofi -modi "grofi:/usr/local/bin/grofi" 
 ``` 

@@ -1,7 +1,16 @@
 version: '3'
 
 tasks:
+
   run:
     cmds:
       - go build .
       - rofi -show grofi -modi "grofi:$HOME/git/grofi/grofi"
+
+  install:
+    cmds:
+      - git clone https://github.com/giulianopz/grofi.git ~/.grofi
+      - cd ~/.grofi
+      - go build .
+      - mv grofi /usr/local/bin/grofi
+      - chmod u+x /usr/local/bin/grofi
