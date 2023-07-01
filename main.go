@@ -110,20 +110,14 @@ func getSearchResults(htmlDoc io.Reader) ([]string, error) {
 			for _, att := range n.Attr {
 				if att.Key == "class" && att.Val == "SearchSnippet-header-path" {
 
-					text := &bytes.Buffer{}
-					getText(n, text)
+					bs := &bytes.Buffer{}
+					getText(n, bs)
 
-					qualifiedName := text.String()
-					simpleName := pkgNameCleaner.Replace(qualifiedName)
-					if strings.Contains(simpleName, "/") {
-						splitted := strings.Split(simpleName, "/")
-						simpleName = splitted[len(splitted)-1]
-					}
-					if qualifiedName != "" && simpleName != "" {
-						searchResults = append(searchResults,
-							fmt.Sprintf("%s %s", simpleName, qualifiedName),
-						)
-					}
+					simpleName, qualifiedName := getNames(bs)
+
+					searchResults = append(searchResults,
+						fmt.Sprintf("%s %s", simpleName, qualifiedName),
+					)
 				}
 			}
 		}
@@ -135,4 +129,16 @@ func getSearchResults(htmlDoc io.Reader) ([]string, error) {
 	f(htmlTree)
 
 	return searchResults, nil
+}
+
+func getNames(bs *bytes.Buffer) (string, string) {
+	qualifiedName := bs.String()
+	simpleName := pkgNameCleaner.Replace(qualifiedName)
+
+	if strings.Contains(simpleName, "/") {
+		splitted := strings.Split(simpleName, "/")
+		simpleName = splitted[len(splitted)-1]
+	}
+
+	return simpleName, qualifiedName
 }
