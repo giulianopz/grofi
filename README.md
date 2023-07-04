@@ -6,18 +6,20 @@ Usage:
 ```
 git clone https://github.com/giulianopz/grofi.git ~/.grofi
 cd ~/.grofi
-go build -o /usr/local/bin/grofi .
-chmod u+x /usr/local/bin/grofi
+go build .
+chmod u+x grofi
+mv grofi /usr/local/bin
 ```
 
-> n.b.: replace '/usr/local/bin' with any path sourced when a login session starts.
+> n.b.: replace '/usr/local/bin' with any path sourced when a new terminal window opens up.
 
-Then add a custom keyboard shortcut to launch `rofi` in script mode according to your desktop environment (e.g. see [here](https://docs.fedoraproject.org/en-US/quick-docs/proc_setting-key-shortcut/) for GNOME):
+Then add a custom keyboard shortcut to launch `rofi` in script mode according to your desktop environment (e.g. see [here](https://docs.fedoraproject.org/en-US/quick-docs/proc_setting-key-shortcut/) for GNOME) executing the following command:
 ```
 rofi -show grofi -modi "grofi:/usr/local/bin/grofi" 
 ```
 
-Launch `rofi` with the configured shortcut:
+Launch `rofi` with the configured shortcut. Then, type the name of a package or a keyword and press `enter`:
+
 ![preview](./assets/preview.png)
 
 ### References:
