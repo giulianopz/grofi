@@ -2,10 +2,8 @@
 
 Small rofi script to search for Go packages on `pkg.go.dev`.
 
-Usage:
+Buind and install it in your PATH:
 ```
-git clone https://github.com/giulianopz/grofi.git ~/.grofi
-cd ~/.grofi
 go build .
 chmod u+x grofi
 mv grofi /usr/local/bin
@@ -18,9 +16,11 @@ Then add a custom keyboard shortcut to launch `rofi` in script mode according to
 rofi -show grofi -modi "grofi:/usr/local/bin/grofi" 
 ```
 
-Launch `rofi` with the configured shortcut. Then, type the name of a package or a keyword and press `enter`:
+Launch `rofi` with the configured shortcut. Then, type the name of a package or a keyword and press <kbd>Enter</kbd> to open in the browser the documentation of the selected entry:
 
 ![preview](./assets/preview.png)
+
+---
 
 ### References:
 - [rofi-script(5)](https://man.archlinux.org/man/rofi-script.5.en)

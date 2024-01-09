@@ -9,8 +9,6 @@ tasks:
 
   install:
     cmds:
-      - git clone https://github.com/giulianopz/grofi.git ~/.grofi
-      - cd ~/.grofi
       - go build .
       - mv grofi /usr/local/bin/grofi
       - chmod u+x /usr/local/bin/grofi

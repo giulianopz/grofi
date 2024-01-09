@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"regexp"
 	"strings"
 
-	"github.com/go-resty/resty/v2"
 	"golang.org/x/net/html"
 )
 
@@ -20,11 +20,15 @@ func main() {
 
 	retv := os.Getenv("ROFI_RETV")
 
-	var searchQuery string
+	var (
+		searchQuery string
+		options     string
+	)
 
 	switch retv {
 	case "0": // first call to script
-		searchQuery = "strings"
+		searchQuery = "http"
+		options = "m=package&limit=3"
 	case "1": // entry was selected
 		{
 			selectedEntry := strings.TrimSpace(os.Args[1])
@@ -35,19 +39,16 @@ func main() {
 		}
 	case "2": // input typed by user
 		searchQuery = os.Args[1]
+		options = "limit=100&m=package#more-results"
 	}
 
-	URI := fmt.Sprintf("https://pkg.go.dev/search?q=%s&limit=100&m=package#more-results", searchQuery)
-
-	client := resty.New()
-
-	resp, err := client.R().SetDoNotParseResponse(true).Get(URI)
+	resp, err := http.Get("https://pkg.go.dev/search?q=" + searchQuery + "&" + options)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer resp.RawBody().Close()
+	defer resp.Body.Close()
 
-	searchResults, err := getSearchResults(resp.RawBody())
+	searchResults, err := getSearchResults(resp.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -55,10 +56,7 @@ func main() {
 }
 
 func open(pkgPath string) {
-
-	pkgUrl := fmt.Sprintf("https://pkg.go.dev/%s", pkgPath)
-
-	if err := openWithDefaultBrowser(pkgUrl); err != nil {
+	if err := openWithDefaultBrowser("https://pkg.go.dev/" + pkgPath); err != nil {
 		os.Exit(1)
 	}
 	os.Exit(0)
@@ -120,19 +118,21 @@ func getSearchResults(htmlDoc io.Reader) ([]string, error) {
 			f(c)
 		}
 	}
+
 	f(htmlTree)
 
 	return searchResults, nil
 }
 
 func getNames(bs *bytes.Buffer) (string, string) {
-	qualifiedName := bs.String()
-	simpleName := pkgNameCleaner.Replace(qualifiedName)
+	var (
+		qualifiedName = bs.String()
+		simpleName    = pkgNameCleaner.Replace(qualifiedName)
+	)
 
 	if strings.Contains(simpleName, "/") {
 		splitted := strings.Split(simpleName, "/")
 		simpleName = splitted[len(splitted)-1]
 	}
-
 	return simpleName, qualifiedName
 }

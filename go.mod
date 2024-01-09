@@ -1,8 +1,5 @@
 module github.com/giulianopz/grofi
 
-go 1.20
+go 1.21
 
-require (
-	github.com/go-resty/resty/v2 v2.7.0
-	golang.org/x/net v0.11.0
-)
+require golang.org/x/net v0.11.0
