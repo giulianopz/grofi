@@ -20,15 +20,9 @@ func main() {
 
 	retv := os.Getenv("ROFI_RETV")
 
-	var (
-		searchQuery string
-		options     string
-	)
-
 	switch retv {
 	case "0": // first call to script
-		searchQuery = "http"
-		options = "m=package&limit=3"
+		fmt.Print("")
 	case "1": // entry was selected
 		{
 			selectedEntry := strings.TrimSpace(os.Args[1])
@@ -38,21 +32,27 @@ func main() {
 			open(selectedEntry)
 		}
 	case "2": // input typed by user
-		searchQuery = os.Args[1]
-		options = "limit=100&m=package#more-results"
-	}
+		searchQuery := os.Args[1]
+		options := "limit=100&m=package#more-results"
 
-	resp, err := http.Get("https://pkg.go.dev/search?q=" + searchQuery + "&" + options)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer resp.Body.Close()
+		resp, err := http.Get("https://pkg.go.dev/search?q=" + searchQuery + "&" + options)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer resp.Body.Close()
 
-	searchResults, err := getSearchResults(resp.Body)
-	if err != nil {
-		log.Fatal(err)
+		searchResults, err := getSearchResults(resp.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if len(searchResults) == 0 {
+			fmt.Print("no results...")
+		} else {
+			fmt.Print(strings.Join(searchResults, "\n"))
+		}
+	default:
+		log.Default().Println("cannot handle retv=" + retv)
 	}
-	fmt.Print(strings.Join(searchResults, "\n"))
 }
 
 func open(pkgPath string) {
