@@ -5,7 +5,7 @@ tasks:
   run:
     cmds:
       - go build .
-      - rofi -show grofi -modi "grofi:$HOME/git/grofi/grofi"
+      - rofi -show grofi -modi "grofi:./grofi"
 
   install:
     cmds:
